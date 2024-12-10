@@ -15,12 +15,19 @@ module.exports=app=>{
     // GET employees
     router.get('/employees', controller.findAllEmployees)
 
+    // GET employee
+    router.get('/employee', controller.findOneEmployee)
+
     // GET COUNT of employees, and SUM of their earnings and deductions
     router.get('/payrolls/sum', controller.sumPayrolls)
 
     // UPDATE payrolls and employees
     router.put('/employee/update', controller.updateEmployee)
     router.put('/payroll/update', controller.updatePayroll)
+
+    // DELETE payrolls and employees
+    router.delete('/employee/delete', controller.deleteEmployee)
+    router.delete('/payroll/delete', controller.deletePayroll)
 
     app.use('/api', router)
 }

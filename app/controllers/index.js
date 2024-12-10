@@ -54,18 +54,65 @@ exports.findAllEmployees = (req, res) => {
       "basicAPWCS",
       "actualInsurableEarnings",
     ],
+    order: [["id", "ASC"]],
   })
     .then((data) => {
       res.status(200).send(data);
     })
     .catch((error) => {
-      res.status(500).send(error);
+      res.status(500).send(error.messsage);
+    });
+};
+
+// Get employee
+exports.findOneEmployee = (req, res) => {
+  const nationalID = req.body.nationalID
+
+  Employee.findByPk(nationalID)
+    .then((data) => {
+
+      res.status(200).send(data);
+    })
+    .catch((error) => {
+      res.status(500).send(error.response);
     });
 };
 
 // Update employee
+exports.updateEmployee = (req, res) => {
+  const nationalID = req.body.nationalID;
+
+  Employee.update(req.body, {
+    where: { nationalID: nationalID },
+  })
+    .then((num) => {
+      if (num == 1) {
+        res.status(200).send("Employee updated successfully");
+      } else {
+        res.status(404).send("ID could not be found");
+      }
+    })
+    .catch((error) => {
+      res.status(500).send(error.messsage);
+    });
+};
 
 // Delete employee
+exports.deleteEmployee = (req, res) => {
+  const nationalID = req.body.nationalID;
+
+  Employee.destroy({ where: { nationalID: nationalID } })
+    .then((num) => {
+      if (num == 1) {
+        res.status(200).send("Employee deleted successfully");
+      } else {
+        res.status(404).send("ID could not be found");
+      }
+    })
+    .catch((error) => {
+      res.status(500).send(error.message);
+    });
+};
 
 /*****************************************PAYROLLS***********************************************************/
 // Create payroll
@@ -169,7 +216,7 @@ exports.findAllPayrolls = (req, res) => {
         "totalDeductionsUSD",
         "netPayUSD",
       ],
-      order:[['id', 'ASC']]
+      order: [["id", "ASC"]],
     }).then((data) => {
       res.status(200).send(data);
     });
@@ -178,11 +225,39 @@ exports.findAllPayrolls = (req, res) => {
   }
 };
 
-// Get one payroll
+// Get payroll
 exports.findOnePayroll = (req, res) => {
   const idNumber = req.body.idNumber;
-
-  Payroll.findOne({ where: { idNumber: idNumber } })
+  Payroll.findOne({
+    attributes: [
+      "firstName",
+      "surname",
+      "worksNumber",
+      "grade",
+      "department",
+      "idNumber",
+      "dateJoined",
+      "daysTaken",
+      "leaveBalance",
+      "loan",
+      "nssaNumber",
+      "medicalAidNumber",
+      "bank",
+      "branch",
+      "accountNumber",
+      "basePay",
+      "transportAllowance",
+      "housingAllowance",
+      "commission",
+      "grossPay",
+      "payeUSD",
+      "aidsLevyUSD",
+      "nssaLevyUSD",
+      "totalDeductionsUSD",
+      "netPayUSD",
+    ],
+    where: { idNumber: idNumber },
+  })
     .then((data) => {
       if (data) {
         res.status(200).send(data);
@@ -192,25 +267,6 @@ exports.findOnePayroll = (req, res) => {
     })
     .catch((error) => {
       res.status(500).send(error.message);
-    });
-};
-
-// Update employee
-exports.updateEmployee = (req, res) => {
-  const nationalID = req.body.nationalID;
-
-  Employee.update(req.body, {
-    where: { nationalID: nationalID },
-  })
-    .then((num) => {
-      if (num == 1) {
-        res.status(200).send("Employee updated successfully");
-      } else {
-        res.status(404).send("ID could not be found");
-      }
-    })
-    .catch((error) => {
-      res.status(500).send(error);
     });
 };
 
@@ -229,11 +285,26 @@ exports.updatePayroll = (req, res) => {
       }
     })
     .catch((error) => {
-      res.status(500).send(error);
+      res.status(500).send(error.messsage);
     });
 };
 
-// Delete employee and payroll
+// Delete payroll
+exports.deletePayroll = (req, res) => {
+  const id = req.body.idNumber;
+
+  Payroll.destroy({ where: { idNumber: id } })
+    .then((num) => {
+      if (num == 1) {
+        res.status(200).send("Payroll deleted successfully");
+      } else {
+        res.status(404).send("ID could not be found");
+      }
+    })
+    .catch((error) => {
+      res.status(500).send(error.messsage);
+    });
+};
 
 // Get sum of salaries, earnings and deductions
 exports.sumPayrolls = (req, res) => {
@@ -265,12 +336,12 @@ exports.sumPayrolls = (req, res) => {
     .then((data) => {
       res.setHeader("Content-Type", "application/json");
       const jsonData = data[0];
-      jsonData.WCIF_USD = 0.0134 * parseFloat(jsonData["basePay"]);
+      jsonData.WCIF_USD = 0.0132 * parseFloat(jsonData["basePay"]);
       jsonData.standardsDevLevy = 0.01 * parseFloat(jsonData["grossPay"]);
       res.status(200).send(jsonData);
     })
     .catch((error) => {
       console.log(error);
-      res.status(500).send(error);
+      res.status(500).send(error.messsage);
     });
 };
