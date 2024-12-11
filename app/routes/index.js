@@ -21,6 +21,9 @@ module.exports=app=>{
     // GET COUNT of employees, and SUM of their earnings and deductions
     router.get('/payrolls/sum', controller.sumPayrolls)
 
+    // GET SUM of deductions
+    router.get('/employees/deductions', controller.sumDeductions)
+
     // UPDATE payrolls and employees
     router.put('/employee/update', controller.updateEmployee)
     router.put('/payroll/update', controller.updatePayroll)

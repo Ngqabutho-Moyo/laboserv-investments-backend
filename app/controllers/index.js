@@ -1,3 +1,4 @@
+const { raw } = require("express");
 const db = require("../models");
 const sequelize = require("sequelize");
 const Employee = db.Employee;
@@ -345,3 +346,20 @@ exports.sumPayrolls = (req, res) => {
       res.status(500).send(error.messsage);
     });
 };
+
+exports.sumDeductions=(req,res)=>{
+  Employee.findAll({
+    attributes:[
+      [sequelize.fn('SUM', sequelize.col('pobsContribution')), 'pobsContribution'],
+      [sequelize.fn('SUM', sequelize.col('basicAPWCS')), 'basicAWPCS']
+    ],
+    raw:true
+  }).then(data=>{
+    res.setHeader('Content-type', 'application/json')
+    const jsonData=data[0]
+    jsonData.totalNSSAPayable=parseFloat(jsonData['pobsContribution'])+parseFloat(jsonData['basicAWPCS'])
+    res.status(200).send(jsonData)
+  }).catch(error=>{
+    res.status(500).send(error.message)
+  })
+}
