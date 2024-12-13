@@ -14,6 +14,8 @@ module.exports = (sequelize, DataTypes) => {
     }
   }
   Payroll.init({
+    month: DataTypes.STRING,
+    year: DataTypes.STRING,
     firstName: DataTypes.STRING,
     surname: DataTypes.STRING,
     worksNumber: DataTypes.STRING,
@@ -24,7 +26,7 @@ module.exports = (sequelize, DataTypes) => {
     daysTaken: DataTypes.INTEGER,
     leaveBalance: DataTypes.FLOAT,
     loan: DataTypes.FLOAT,
-    nssaNumber: DataTypes.STRING,
+    NSSANumber: DataTypes.STRING,
     medicalAidNumber: DataTypes.STRING,
     bank: DataTypes.STRING,
     branch: DataTypes.STRING,

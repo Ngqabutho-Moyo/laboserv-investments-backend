@@ -67,11 +67,20 @@ exports.findAllEmployees = (req, res) => {
 
 // Get employee
 exports.findOneEmployee = (req, res) => {
-  const nationalID = req.body.nationalID
+  // const nationalID=req.query.nationalID
+  const firstName = req.query.firstName;
+  const surname = req.query.surname;
+  // req.setHeader('Content-Type','text/html')
 
-  Employee.findByPk(nationalID)
+  Employee.findOne({
+    raw: true,
+    where: {
+      // nationalID:nationalID,
+      firstName: firstName,
+      surname: surname,
+    },
+  })
     .then((data) => {
-
       res.status(200).send(data);
     })
     .catch((error) => {
@@ -81,10 +90,11 @@ exports.findOneEmployee = (req, res) => {
 
 // Update employee
 exports.updateEmployee = (req, res) => {
-  const nationalID = req.body.nationalID;
+  const firstName = req.body.firstName;
+  const surname = req.body.surname;
 
   Employee.update(req.body, {
-    where: { nationalID: nationalID },
+    where: { firstName: firstName, surname: surname },
   })
     .then((num) => {
       if (num == 1) {
@@ -100,14 +110,18 @@ exports.updateEmployee = (req, res) => {
 
 // Delete employee
 exports.deleteEmployee = (req, res) => {
-  const nationalID = req.body.nationalID;
+  const firstName = req.query.firstName;
+  const surname = req.query.surname;
 
-  Employee.destroy({ where: { nationalID: nationalID } })
+  Employee.destroy({
+    raw: true,
+    where: { firstName: firstName, surname: surname },
+  })
     .then((num) => {
       if (num == 1) {
         res.status(200).send("Employee deleted successfully");
       } else {
-        res.status(404).send("ID could not be found");
+        res.status(404).send("Employee could not be found");
       }
     })
     .catch((error) => {
@@ -116,15 +130,20 @@ exports.deleteEmployee = (req, res) => {
 };
 
 /*****************************************PAYROLLS***********************************************************/
-// Create payroll
+// Create payslip
 exports.createPayroll = (req, res) => {
+  let nssaPension;
   try {
     const grossPay =
       parseFloat(req.body.basePay) +
       parseFloat(req.body.housingAllowance) +
       parseFloat(req.body.transportAllowance) +
       parseFloat(req.body.commission);
-    const nssaPension = req.body.basePay * 0.045;
+    if (req.body.basePay * 0.045 > 700) {
+      nssaPension = 700;
+    } else {
+      nssaPension = req.body.basePay * 0.045;
+    }
     const taxableIncome = grossPay - nssaPension;
     let paye = 0;
     switch (true) {
@@ -151,7 +170,9 @@ exports.createPayroll = (req, res) => {
     const totalDeductions = paye + aidsLevy + nssaPension;
     const netPay = grossPay - totalDeductions;
 
-    const payroll = {
+    const payslip = {
+      month: req.body.month,
+      year: req.body.year,
       firstName: req.body.firstName,
       surname: req.body.surname,
       worksNumber: req.body.worksNumber,
@@ -162,7 +183,7 @@ exports.createPayroll = (req, res) => {
       daysTaken: req.body.daysTaken,
       leaveBalance: req.body.leaveBalance,
       loan: req.body.loan,
-      nssaNumber: req.body.nssaNumber,
+      NSSANumber: req.body.NSSANumber,
       medicalAidNumber: req.body.medicalAidNumber,
       bank: req.body.bank,
       branch: req.body.branch,
@@ -178,8 +199,9 @@ exports.createPayroll = (req, res) => {
       totalDeductionsUSD: totalDeductions,
       netPayUSD: netPay,
     };
-    Payroll.create(payroll).then(
-      res.status(200).send("Payroll created successfully")
+    // res.status(200).send(payslip)
+    Payroll.create(payslip).then(
+      res.status(200).send("Payslip created successfully")
     );
   } catch (error) {
     res.status(500).send(error.response);
@@ -191,6 +213,8 @@ exports.findAllPayrolls = (req, res) => {
   try {
     Payroll.findAll({
       attributes: [
+        "month",
+        "year",
         "firstName",
         "surname",
         "worksNumber",
@@ -201,7 +225,7 @@ exports.findAllPayrolls = (req, res) => {
         "daysTaken",
         "leaveBalance",
         "loan",
-        "nssaNumber",
+        "NSSANumber",
         "medicalAidNumber",
         "bank",
         "branch",
@@ -226,11 +250,15 @@ exports.findAllPayrolls = (req, res) => {
   }
 };
 
-// Get payroll
-exports.findOnePayroll = (req, res) => {
-  const idNumber = req.body.idNumber;
-  Payroll.findOne({
+// Get payrolls for a specific month
+exports.findAllPayrollsInPeriod = (req, res) => {
+  const month = req.query.month;
+  const year = req.query.year;
+
+  Payroll.findAll({
     attributes: [
+      "month",
+      "year",
       "firstName",
       "surname",
       "worksNumber",
@@ -241,7 +269,7 @@ exports.findOnePayroll = (req, res) => {
       "daysTaken",
       "leaveBalance",
       "loan",
-      "nssaNumber",
+      "NSSANumber",
       "medicalAidNumber",
       "bank",
       "branch",
@@ -257,21 +285,69 @@ exports.findOnePayroll = (req, res) => {
       "totalDeductionsUSD",
       "netPayUSD",
     ],
-    where: { idNumber: idNumber },
+    order: [["id", "ASC"]],
+    where: { month: month, year: year },
   })
     .then((data) => {
-      if (data) {
+      if (data.length > 0) {
         res.status(200).send(data);
       } else {
-        res.status(404).send("ID could not be found");
+        res.status(404).send("No payslips found for requested period");
       }
+    })
+    .catch((error) => {
+      res.status(500).send(error.response);
+    });
+};
+
+// Get payslip
+exports.findOnePayroll = (req, res) => {
+  const idNumber = req.query.idNumber;
+  const month = req.query.month;
+  const year = req.query.year;
+
+  Payroll.findOne({
+    attributes: [
+      "month",
+      "year",
+      "firstName",
+      "surname",
+      "worksNumber",
+      "grade",
+      "department",
+      "idNumber",
+      "dateJoined",
+      "daysTaken",
+      "leaveBalance",
+      "loan",
+      "NSSANumber",
+      "medicalAidNumber",
+      "bank",
+      "branch",
+      "accountNumber",
+      "basePay",
+      "transportAllowance",
+      "housingAllowance",
+      "commission",
+      "grossPay",
+      "payeUSD",
+      "aidsLevyUSD",
+      "nssaLevyUSD",
+      "totalDeductionsUSD",
+      "netPayUSD",
+    ],
+    raw: true,
+    where: { idNumber: idNumber, month: month, year: year },
+  })
+    .then((data) => {
+      res.status(200).send(data);
     })
     .catch((error) => {
       res.status(500).send(error.message);
     });
 };
 
-// Update payroll
+// Update payslip
 exports.updatePayroll = (req, res) => {
   const idNumber = req.body.idNumber;
 
@@ -280,7 +356,7 @@ exports.updatePayroll = (req, res) => {
   })
     .then((num) => {
       if (num == 1) {
-        res.status(200).send("Payroll updated successfully");
+        res.status(200).send("Payslip updated successfully");
       } else {
         res.status(404).send("ID could not be found");
       }
@@ -290,14 +366,18 @@ exports.updatePayroll = (req, res) => {
     });
 };
 
-// Delete payroll
+// Delete payslip
 exports.deletePayroll = (req, res) => {
-  const id = req.body.idNumber;
+  const firstName = req.body.firstName;
+  const surname = req.body.surname;
 
-  Payroll.destroy({ where: { idNumber: id } })
+  Payroll.destroy({
+    raw: true,
+    where: { firstName: firstName, surname: surname },
+  })
     .then((num) => {
       if (num == 1) {
-        res.status(200).send("Payroll deleted successfully");
+        res.status(200).send("Payslip deleted successfully");
       } else {
         res.status(404).send("ID could not be found");
       }
@@ -307,8 +387,8 @@ exports.deletePayroll = (req, res) => {
     });
 };
 
-// Get sum of salaries, earnings and deductions
-exports.sumPayrolls = (req, res) => {
+// Generate payslip summaries
+exports.payrollSummary = (req, res) => {
   Payroll.findAll({
     attributes: [
       [sequelize.fn("COUNT", sequelize.col("id")), "entries"],
@@ -335,10 +415,19 @@ exports.sumPayrolls = (req, res) => {
     raw: true,
   })
     .then((data) => {
-      res.setHeader("Content-Type", "application/json");
       const jsonData = data[0];
       jsonData.WCIF_USD = 0.0132 * parseFloat(jsonData["basePay"]);
       jsonData.standardsDevLevy = 0.01 * parseFloat(jsonData["grossPay"]);
+      jsonData.zimdefUSD =
+        0.01 *
+        (parseFloat(jsonData["grossPay"]) +
+          parseFloat(jsonData["nssaLevyUSD"]));
+      jsonData.totalEmployerContr =
+        parseFloat(jsonData["nssaLevyUSD"]) +
+        jsonData.WCIF_USD +
+        jsonData.standardsDevLevy +
+        jsonData.zimdefUSD;
+      res.setHeader("Content-Type", "application/json");
       res.status(200).send(jsonData);
     })
     .catch((error) => {
@@ -347,19 +436,78 @@ exports.sumPayrolls = (req, res) => {
     });
 };
 
-exports.sumDeductions=(req,res)=>{
-  Employee.findAll({
-    attributes:[
-      [sequelize.fn('SUM', sequelize.col('pobsContribution')), 'pobsContribution'],
-      [sequelize.fn('SUM', sequelize.col('basicAPWCS')), 'basicAWPCS']
+exports.payrollMonthlySummary = (req, res) => {
+  const month = req.query.month;
+  const year = req.query.year;
+
+  Payroll.findAll({
+    where: { month: month, year: year },
+    attributes: [
+      [sequelize.fn("COUNT", sequelize.col("id")), "entries"],
+      [sequelize.fn("SUM", sequelize.col("basePay")), "basePay"],
+      [sequelize.fn("SUM", sequelize.col("commission")), "commission"],
+      [
+        sequelize.fn("SUM", sequelize.col("housingAllowance")),
+        "housingAllowance",
+      ],
+      [
+        sequelize.fn("SUM", sequelize.col("transportAllowance")),
+        "transportAllowance",
+      ],
+      [sequelize.fn("SUM", sequelize.col("grossPay")), "grossPay"],
+      [sequelize.fn("SUM", sequelize.col("payeUSD")), "payeUSD"],
+      [sequelize.fn("SUM", sequelize.col("aidsLevyUSD")), "aidsLevyUSD"],
+      [sequelize.fn("SUM", sequelize.col("nssaLevyUSD")), "nssaLevyUSD"],
+      [
+        sequelize.fn("SUM", sequelize.col("totalDeductionsUSD")),
+        "totalDeductionsUSD",
+      ],
+      [sequelize.fn("SUM", sequelize.col("netPayUSD")), "netPayUSD"],
     ],
-    raw:true
-  }).then(data=>{
-    res.setHeader('Content-type', 'application/json')
-    const jsonData=data[0]
-    jsonData.totalNSSAPayable=parseFloat(jsonData['pobsContribution'])+parseFloat(jsonData['basicAWPCS'])
-    res.status(200).send(jsonData)
-  }).catch(error=>{
-    res.status(500).send(error.message)
+    raw: true,
   })
-}
+    .then((data) => {
+      // res.setHeader("Content-Type", "application/json")
+      const jsonData = data[0];
+      jsonData.WCIF_USD = 0.0132 * parseFloat(jsonData["basePay"]);
+      jsonData.zimdefUSD =
+        0.01 *
+        (parseFloat(jsonData["grossPay"]) +
+          parseFloat(jsonData["nssaLevyUSD"]));
+      jsonData.standardsDevLevy = 0.01 * parseFloat(jsonData["grossPay"]);
+      jsonData.totalEmployerContr =
+        parseFloat(jsonData["nssaLevyUSD"]) +
+        jsonData.WCIF_USD +
+        jsonData.standardsDevLevy +
+        jsonData.zimdefUSD;
+      res.status(200).send(jsonData);
+    })
+    .catch((error) => {
+      console.log(error);
+      res.status(500).send(error.messsage);
+    });
+};
+
+exports.sumDeductions = (req, res) => {
+  Employee.findAll({
+    attributes: [
+      [
+        sequelize.fn("SUM", sequelize.col("pobsContribution")),
+        "pobsContribution",
+      ],
+      [sequelize.fn("SUM", sequelize.col("basicAPWCS")), "basicAWPCS"],
+    ],
+    raw: true,
+  })
+    .then((data) => {
+      // res.setHeader("Content-type", "application/json")
+      const jsonData = data[0];
+      jsonData.totalNSSAPayable =
+        parseFloat(jsonData["pobsContribution"]) +
+        parseFloat(jsonData["basicAWPCS"]);
+      res.status(200).send(jsonData);
+    })
+    .catch((error) => {
+      res.status(500).send(error.message);
+    });
+};

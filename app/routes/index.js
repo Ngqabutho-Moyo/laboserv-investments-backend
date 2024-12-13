@@ -12,6 +12,9 @@ module.exports=app=>{
     router.get('/payrolls', controller.findAllPayrolls)
     router.get('/payroll', controller.findOnePayroll)
 
+    // GET payrolls for specific period
+    router.get('/payrolls/period', controller.findAllPayrollsInPeriod)
+
     // GET employees
     router.get('/employees', controller.findAllEmployees)
 
@@ -19,7 +22,10 @@ module.exports=app=>{
     router.get('/employee', controller.findOneEmployee)
 
     // GET COUNT of employees, and SUM of their earnings and deductions
-    router.get('/payrolls/sum', controller.sumPayrolls)
+    router.get('/payrolls/summary', controller.payrollSummary)
+
+    // GET COUNT of employees, and SUM of their earnings and deductions for specified period
+    router.get('/payrolls/summary/month', controller.payrollMonthlySummary)
 
     // GET SUM of deductions
     router.get('/employees/deductions', controller.sumDeductions)
