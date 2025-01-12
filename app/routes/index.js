@@ -15,6 +15,9 @@ module.exports = (app) => {
   // GET payrolls for specific period
   router.get("/payrolls/period", controller.findAllPayrollsInPeriod);
 
+  // GET payrolls for specific user
+  router.get("/payrolls/employee", controller.findAllPayrollsForEmployee);
+
   // GET employees
   router.get("/employees", controller.findAllEmployees);
 

@@ -23,9 +23,14 @@ exports.createEmployee = (req, res) => {
     startDate: req.body.startDate,
     endDate: req.body.endDate,
     pobsInsurableEarnings: req.body.pobsInsurableEarnings,
-    actualInsurableEarnings: req.body.actualInsurableEarnings,
+    actualInsurableEarnings: req.body.actualInsurableEarnings,    
     pobsContribution: pobsContribution,
     basicAPWCS: basicAPWCS,
+    department: req.body.department,
+    bank: req.body.bank,
+    branch: req.body.branch,
+    accountNumber: req.body.accountNumber,
+    medicalAidNumber: req.body.medicalAidNumber,
   };
   Employee.create(employee)
     .then(() => {
@@ -39,22 +44,22 @@ exports.createEmployee = (req, res) => {
 // Get employees
 exports.findAllEmployees = (req, res) => {
   Employee.findAll({
-    attributes: [
-      "ssrNumber",
-      "worksNumber",
-      "ssnNumber",
-      "nationalID",
-      "period",
-      "birthDate",
-      "surname",
-      "firstName",
-      "startDate",
-      "endDate",
-      "pobsInsurableEarnings",
-      "pobsContribution",
-      "basicAPWCS",
-      "actualInsurableEarnings",
-    ],
+    // attributes: [
+    //   "ssrNumber",
+    //   "worksNumber",
+    //   "ssnNumber",
+    //   "nationalID",
+    //   "period",
+    //   "birthDate",
+    //   "surname",
+    //   "firstName",
+    //   "startDate",
+    //   "endDate",
+    //   "pobsInsurableEarnings",
+    //   "pobsContribution",
+    //   "basicAPWCS",
+    //   "actualInsurableEarnings",
+    // ],
     order: [["id", "ASC"]],
   })
     .then((data) => {
@@ -71,6 +76,27 @@ exports.findOneEmployee = (req, res) => {
   const surname = req.query.surname;
 
   Employee.findOne({
+    attributes: [
+      "ssrNumber",
+      "worksNumber",
+      "ssnNumber",
+      "nationalID",
+      "period",
+      "birthDate",
+      "surname",
+      "firstName",
+      "startDate",
+      "endDate",
+      "pobsInsurableEarnings",
+      "pobsContribution",
+      "basicAPWCS",
+      "actualInsurableEarnings",
+      "department",
+      "bank",
+      "branch",
+      "accountNumber",
+      "medicalAidNumber"
+    ],
     raw: true,
     where: {
       firstName: firstName,
@@ -101,7 +127,7 @@ exports.updateEmployee = (req, res) => {
       if (num == 1) {
         res.status(200).send("Employee updated successfully");
       } else {
-        res.status(404).send("ID could not be found");
+        res.status(404).send("Employee could not be found");
       }
     })
     .catch((error) => {
@@ -249,6 +275,55 @@ exports.findAllPayrolls = (req, res) => {
   } catch (error) {
     res.status(500).send(error.response);
   }
+};
+
+// Get payslips for a specific employee
+exports.findAllPayrollsForEmployee = (req, res) => {
+  const firstName = req.query.firstName;
+
+  Payroll.findAll({
+    attributes: [
+      "month",
+      "year",
+      "firstName",
+      "surname",
+      "worksNumber",
+      "grade",
+      "department",
+      "idNumber",
+      "dateJoined",
+      "daysTaken",
+      "leaveBalance",
+      "loan",
+      "NSSANumber",
+      "medicalAidNumber",
+      "bank",
+      "branch",
+      "accountNumber",
+      "basePay",
+      "transportAllowance",
+      "housingAllowance",
+      "commission",
+      "grossPay",
+      "payeUSD",
+      "aidsLevyUSD",
+      "nssaLevyUSD",
+      "totalDeductionsUSD",
+      "netPayUSD",
+    ],
+    order: [["id", "ASC"]],
+    where: { firstName: firstName },
+  })
+    .then((data) => {
+      if (data.length > 0) {
+        res.status(200).send(data);
+      } else {
+        res.status(404).send("No payslips found for requested period");
+      }
+    })
+    .catch((error) => {
+      res.status(500).send(error.response);
+    });
 };
 
 // Get payslips for a specific month
