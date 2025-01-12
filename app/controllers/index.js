@@ -2,7 +2,7 @@ const { raw } = require("express");
 const db = require("../models");
 const sequelize = require("sequelize");
 const Employee = db.Employee;
-const Payroll = db.Payroll;
+const Payslip = db.Payslip;
 
 /************************************************************EMPLOYEES**********************************************************************/
 
@@ -44,22 +44,6 @@ exports.createEmployee = (req, res) => {
 // Get employees
 exports.findAllEmployees = (req, res) => {
   Employee.findAll({
-    // attributes: [
-    //   "ssrNumber",
-    //   "worksNumber",
-    //   "ssnNumber",
-    //   "nationalID",
-    //   "period",
-    //   "birthDate",
-    //   "surname",
-    //   "firstName",
-    //   "startDate",
-    //   "endDate",
-    //   "pobsInsurableEarnings",
-    //   "pobsContribution",
-    //   "basicAPWCS",
-    //   "actualInsurableEarnings",
-    // ],
     order: [["id", "ASC"]],
   })
     .then((data) => {
@@ -119,6 +103,8 @@ exports.findOneEmployee = (req, res) => {
 exports.updateEmployee = (req, res) => {
   const firstName = req.body.firstName;
   const surname = req.body.surname;
+  req.body.pobsContribution = parseFloat(req.body.pobsInsurableEarnings) * 0.09;
+  req.body.basicAPWCS = parseFloat(req.body.pobsInsurableEarnings) * 0.0132;
 
   Employee.update(req.body, {
     where: { firstName: firstName, surname: surname },
@@ -156,10 +142,10 @@ exports.deleteEmployee = (req, res) => {
     });
 };
 
-/***********************************************************PAYROLLS***********************************************************************/
+/***********************************************************PAYSLIPS***********************************************************************/
 
 // Create payslip
-exports.createPayroll = (req, res) => {
+exports.createPayslip = (req, res) => {
   let nssaPension;
   try {
     const grossPay =
@@ -227,7 +213,7 @@ exports.createPayroll = (req, res) => {
       totalDeductionsUSD: totalDeductions,
       netPayUSD: netPay,
     };
-    Payroll.create(payslip).then(
+    Payslip.create(payslip).then(
       res.status(200).send("Payslip created successfully")
     );
   } catch (error) {
@@ -236,9 +222,9 @@ exports.createPayroll = (req, res) => {
 };
 
 // Get payslips
-exports.findAllPayrolls = (req, res) => {
+exports.findAllPayslips = (req, res) => {
   try {
-    Payroll.findAll({
+    Payslip.findAll({
       attributes: [
         "month",
         "year",
@@ -278,10 +264,10 @@ exports.findAllPayrolls = (req, res) => {
 };
 
 // Get payslips for a specific employee
-exports.findAllPayrollsForEmployee = (req, res) => {
+exports.findAllPayslipsForEmployee = (req, res) => {
   const firstName = req.query.firstName;
 
-  Payroll.findAll({
+  Payslip.findAll({
     attributes: [
       "month",
       "year",
@@ -327,11 +313,11 @@ exports.findAllPayrollsForEmployee = (req, res) => {
 };
 
 // Get payslips for a specific month
-exports.findAllPayrollsInPeriod = (req, res) => {
+exports.findAllPayslipsInPeriod = (req, res) => {
   const month = req.query.month;
   const year = req.query.year;
 
-  Payroll.findAll({
+  Payslip.findAll({
     attributes: [
       "month",
       "year",
@@ -377,14 +363,14 @@ exports.findAllPayrollsInPeriod = (req, res) => {
 };
 
 // Get payslip
-exports.findOnePayroll = (req, res) => {
+exports.findOnePayslip = (req, res) => {
   const idNumber = req.query.idNumber;
   const firstName = req.query.firstName;
   const surname = req.query.surname;
   const month = req.query.month;
   const year = req.query.year;
 
-  Payroll.findOne({
+  Payslip.findOne({
     attributes: [
       "month",
       "year",
@@ -432,10 +418,10 @@ exports.findOnePayroll = (req, res) => {
 };
 
 // Update payslip
-exports.updatePayroll = (req, res) => {
+exports.updatePayslip = (req, res) => {
   const idNumber = req.body.idNumber;
 
-  Payroll.update(req.body, {
+  Payslip.update(req.body, {
     where: { idNumber: idNumber },
   })
     .then((num) => {
@@ -451,11 +437,11 @@ exports.updatePayroll = (req, res) => {
 };
 
 // Delete payslip
-exports.deletePayroll = (req, res) => {
+exports.deletePayslip = (req, res) => {
   const firstName = req.body.firstName;
   const surname = req.body.surname;
 
-  Payroll.destroy({
+  Payslip.destroy({
     raw: true,
     where: { firstName: firstName, surname: surname },
   })
@@ -472,8 +458,8 @@ exports.deletePayroll = (req, res) => {
 };
 
 // Generate payslip summary
-exports.payrollSummary = (req, res) => {
-  Payroll.findAll({
+exports.payslipSummary = (req, res) => {
+  Payslip.findAll({
     attributes: [
       [sequelize.fn("COUNT", sequelize.col("id")), "entries"],
       [sequelize.fn("SUM", sequelize.col("basePay")), "basePay"],
@@ -521,11 +507,11 @@ exports.payrollSummary = (req, res) => {
 };
 
 // Generate monthly payslip summary
-exports.payrollMonthlySummary = (req, res) => {
+exports.payslipMonthlySummary = (req, res) => {
   const month = req.query.month;
   const year = req.query.year;
 
-  Payroll.findAll({
+  Payslip.findAll({
     where: { month: month, year: year },
     attributes: [
       [sequelize.fn("COUNT", sequelize.col("id")), "entries"],
